@@ -1,0 +1,10 @@
+services:
+  triage:
+    build: .
+    environment:
+      # .NET maps GEMINI__APIKEY → Gemini:ApiKey (double underscore = config hierarchy separator)
+      - GEMINI__APIKEY=${GEMINI_API_KEY}
+    volumes:
+      # Persist the audit log on the host so it survives container restarts.
+      # Create the file before first run: touch audit.jsonl
+      - ./audit.jsonl:/app/audit.jsonl
