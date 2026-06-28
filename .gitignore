@@ -67,3 +67,6 @@ TestResults/
 
 # Local machine settings
 launchSettings.json
+
+# Internal planning artifacts
+PLAN.md
