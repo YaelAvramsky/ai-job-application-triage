@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,9 @@ internal class GeminiChatClientAdapter : IChatClient
     private readonly string _modelId;
     private readonly HttpClient _httpClient;
     private readonly Dictionary<string, object>? _responseSchema;
+
+    private const int MaxRetries = 4;
+    private static readonly TimeSpan InitialDelay = TimeSpan.FromSeconds(5);
 
     public GeminiChatClientAdapter(
         string apiKey,
@@ -41,15 +45,32 @@ internal class GeminiChatClientAdapter : IChatClient
             throw new InvalidOperationException("No valid user message text found");
 
         var requestBody = BuildRequestBody(userMessage.Text);
-
-        var jsonContent = new StringContent(
-            JsonSerializer.Serialize(requestBody),
-            System.Text.Encoding.UTF8,
-            "application/json");
-
         var url = $"https://generativelanguage.googleapis.com/v1beta/models/{_modelId}:generateContent?key={_apiKey}";
 
-        var response = await _httpClient.PostAsync(url, jsonContent, cancellationToken);
+        HttpResponseMessage response = null!;
+        for (int attempt = 0; attempt <= MaxRetries; attempt++)
+        {
+            var jsonContent = new StringContent(
+                JsonSerializer.Serialize(requestBody),
+                System.Text.Encoding.UTF8,
+                "application/json");
+
+            response = await _httpClient.PostAsync(url, jsonContent, cancellationToken);
+
+            if (response.StatusCode != HttpStatusCode.TooManyRequests)
+                break;
+
+            if (attempt == MaxRetries)
+                break;
+
+            // Honour Retry-After if the server sends it, otherwise use exponential backoff.
+            TimeSpan delay = InitialDelay * (int)Math.Pow(2, attempt);
+            if (response.Headers.RetryAfter?.Delta is { } retryAfter && retryAfter > delay)
+                delay = retryAfter;
+
+            await Task.Delay(delay, cancellationToken);
+        }
+
         response.EnsureSuccessStatusCode();
 
         var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);

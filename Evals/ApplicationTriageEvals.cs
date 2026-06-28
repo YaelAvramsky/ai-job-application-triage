@@ -163,8 +163,11 @@ public class EvalRunner
     {
         var results = new List<EvalResult>();
 
-        foreach (var evalCase in Cases)
+        foreach (var (evalCase, index) in Cases.Select((c, i) => (c, i)))
         {
+            if (index > 0)
+                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+
             _logger.LogInformation("  Running eval: {Description}", evalCase.Description);
 
             var preprocessed = PreprocessExecutor.Preprocess(evalCase.Input);
