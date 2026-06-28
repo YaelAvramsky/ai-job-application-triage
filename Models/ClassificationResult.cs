@@ -8,7 +8,6 @@ namespace zionet_workflow.Models;
 
 /// <summary>
 /// Structured classification output from the agent node.
-/// Session 1 skill: structured output inside a workflow node.
 /// </summary>
 public sealed record ClassificationResult
 {
