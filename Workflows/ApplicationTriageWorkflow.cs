@@ -25,17 +25,20 @@ public class ApplicationTriageWorkflow
     private readonly ClassifierExecutor _classifier;
     private readonly RouterExecutor _router;
     private readonly HumanApprovalService _approvalService;
+    private readonly AuditLogger _auditLogger;
 
     public ApplicationTriageWorkflow(
         ILogger logger,
         ClassifierExecutor classifier,
         RouterExecutor router,
-        HumanApprovalService approvalService)
+        HumanApprovalService approvalService,
+        AuditLogger auditLogger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _classifier = classifier ?? throw new ArgumentNullException(nameof(classifier));
         _router = router ?? throw new ArgumentNullException(nameof(router));
         _approvalService = approvalService ?? throw new ArgumentNullException(nameof(approvalService));
+        _auditLogger = auditLogger ?? throw new ArgumentNullException(nameof(auditLogger));
     }
 
     /// <summary>
@@ -158,6 +161,21 @@ public class ApplicationTriageWorkflow
             Data = JsonSerializer.Serialize(approvalResult),
             Timestamp = DateTime.UtcNow,
         };
+
+        // Audit: append one JSON line recording the full decision
+        _auditLogger.LogDecision(new AuditEntry
+        {
+            ApplicationId = appId,
+            Timestamp = DateTimeOffset.UtcNow,
+            Category = classification.Category.ToString(),
+            Priority = classification.Priority.ToString(),
+            MatchScore = classification.MatchScore,
+            Confidence = classification.Confidence,
+            Route = routingDecision.Route.ToString(),
+            RedFlags = preprocessed.RedFlags,
+            Reasoning = classification.Reasoning,
+            FinalStatus = approvalResult.Status,
+        });
 
         // Final output event
         yield return new WorkflowEvent

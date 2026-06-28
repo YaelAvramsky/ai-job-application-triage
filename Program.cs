@@ -45,7 +45,10 @@ try
     var router = new RouterExecutor(loggerFactory.CreateLogger<RouterExecutor>());
     var approvalService = new HumanApprovalService(loggerFactory.CreateLogger<HumanApprovalService>());
 
-    var workflow = new ApplicationTriageWorkflow(logger, classifier, router, approvalService);
+    var auditLogPath = configuration["AuditLog:Path"] ?? "audit.jsonl";
+    var auditLogger = new AuditLogger(auditLogPath, loggerFactory.CreateLogger<AuditLogger>());
+
+    var workflow = new ApplicationTriageWorkflow(logger, classifier, router, approvalService, auditLogger);
 
     // ─── Main workflow run ────────────────────────────────────────────────────
     var applications = SampleApplications.GetAllSamples();
