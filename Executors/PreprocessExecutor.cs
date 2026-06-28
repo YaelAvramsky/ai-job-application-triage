@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Text.RegularExpressions;
+﻿using System.Linq;
 using Microsoft.Extensions.Logging;
 using zionet_workflow.Models;
+using zionet_workflow.Services;
 
 namespace zionet_workflow.Executors;
 
@@ -27,6 +23,7 @@ public static class PreprocessExecutor
         var maskedEmail = MaskEmail(app.Email);
         var hasRequiredSkills = HasAllRequiredSkills(app.Skills);
         var coverLetterSummary = SummarizeCoverLetter(app.CoverLetter);
+        var redFlags = RedFlagDetector.Detect(app);
 
         var preprocessed = new PreprocessedApplication
         {
@@ -39,7 +36,13 @@ public static class PreprocessExecutor
             HasRequiredSkills = hasRequiredSkills,
             MaskedEmail = maskedEmail,
             FullApplicationText = BuildFullText(app),
+            RedFlags = redFlags,
         };
+
+        if (redFlags.Count > 0)
+            logger?.LogWarning(
+                "Red flags detected for {Id}: {Flags}",
+                app.Id, string.Join(", ", redFlags));
 
         logger?.LogInformation(
             "Preprocessed: required skills match={HasRequired}, email={MaskedEmail}",

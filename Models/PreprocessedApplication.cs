@@ -22,4 +22,7 @@ public sealed record PreprocessedApplication
     
     /// <summary>Raw data for classifier—text analysis needs substance.</summary>
     public string FullApplicationText { get; init; } = string.Empty;
+
+    /// <summary>Flag identifiers from <see cref="Services.RedFlagDetector"/> — empty means no issues detected.</summary>
+    public IReadOnlyList<string> RedFlags { get; init; } = [];
 }

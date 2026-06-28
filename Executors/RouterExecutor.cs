@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using zionet_workflow.Models;
+using zionet_workflow.Services;
 
 namespace zionet_workflow.Executors;
 
@@ -18,6 +19,38 @@ public class RouterExecutor
     public RouterExecutor(ILogger logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    /// <summary>
+    /// Routes an application, checking deterministic red flags before applying LLM-based rules.
+    /// A <see cref="RedFlagDetector.ZeroExperienceNoSkills"/> flag overrides the LLM decision.
+    /// A <see cref="RedFlagDetector.GenericCoverLetter"/> flag is logged but does not change routing.
+    /// </summary>
+    public RoutingDecision Route(ClassificationResult classification, PreprocessedApplication preprocessed)
+    {
+        if (preprocessed.RedFlags.Contains(RedFlagDetector.ZeroExperienceNoSkills))
+        {
+            _logger.LogWarning(
+                "Red flag override for {Id}: {Flag} → forcing RequestMoreInfo (LLM decision ignored)",
+                classification.ApplicationId, RedFlagDetector.ZeroExperienceNoSkills);
+
+            return new RoutingDecision
+            {
+                ApplicationId = classification.ApplicationId,
+                Route = RoutePath.RequestMoreInfo,
+                Reason = "Red flag override: zero experience and no skills listed. " +
+                         "Application is too incomplete to evaluate — please provide qualifications.",
+            };
+        }
+
+        if (preprocessed.RedFlags.Contains(RedFlagDetector.GenericCoverLetter))
+        {
+            _logger.LogWarning(
+                "Red flag noted for {Id}: {Flag}. Proceeding with LLM routing decision.",
+                classification.ApplicationId, RedFlagDetector.GenericCoverLetter);
+        }
+
+        return Route(classification);
     }
 
     public RoutingDecision Route(ClassificationResult classification)

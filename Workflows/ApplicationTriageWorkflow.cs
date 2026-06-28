@@ -99,7 +99,7 @@ public class ApplicationTriageWorkflow
             Timestamp = DateTime.UtcNow,
         };
 
-        var routingDecision = _router.Route(classification);
+        var routingDecision = _router.Route(classification, preprocessed);
 
         yield return new WorkflowEvent
         {
