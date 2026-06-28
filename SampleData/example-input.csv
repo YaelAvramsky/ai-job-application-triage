@@ -1,0 +1,4 @@
+Id,ApplicantName,Email,Position,YearsOfExperience,Skills,CoverLetter
+CSV001,Jane Smith,jane.smith@example.com,C# Developer,7,C#;SQL;Azure;Docker;Git,"I have been building enterprise .NET applications for seven years, most recently leading a microservices migration on Azure using C# and SQL Server. I am confident I can contribute from day one."
+CSV002,Tom Rivera,tom.rivera@example.com,C# Developer,3,C#;SQL,Three years of C# REST API development on SQL Server. Eager to grow my Azure skills and contribute to a strong engineering team.
+CSV003,Sam Lee,sam.lee@example.com,C# Developer,0,,"Hi I want to work here. Hire me."
